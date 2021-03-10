@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="getBeanTest" class="com.mashibing.lookupMethod.GetBeanTest">
+		<!--动态的将teacher所代表的bean作为抽象方法getbean的返回值-->
+		<!--<lookup-method name="getBean" bean="teacher"/>-->
+		<lookup-method name="getBean" bean="student"/>
+	</bean>
+	<bean id="teacher" class="com.mashibing.lookupMethod.Teacher"/>
+	<bean id="student" class="com.mashibing.lookupMethod.Student"/>
+</beans>

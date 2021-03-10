@@ -1,3 +1,4 @@
+import com.mashibing.lookupMethod.GetBeanTest;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -13,5 +14,12 @@ public class MyTest1 {
 	@Test
 	public void test1(){
 		BeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("tx.xml"));
+	}
+
+	@Test
+	public void test2(){
+		ApplicationContext context = new ClassPathXmlApplicationContext("lookupTest.xml");
+		GetBeanTest test = context.getBean("getBeanTest", GetBeanTest.class);
+		test.showMe();
 	}
 }
