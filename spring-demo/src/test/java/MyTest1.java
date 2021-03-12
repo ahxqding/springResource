@@ -1,4 +1,5 @@
 import com.mashibing.lookupMethod.GetBeanTest;
+import com.mashibing.replacedMethod.TestChangeMethod;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -21,5 +22,12 @@ public class MyTest1 {
 		ApplicationContext context = new ClassPathXmlApplicationContext("lookupTest.xml");
 		GetBeanTest test = context.getBean("getBeanTest", GetBeanTest.class);
 		test.showMe();
+	}
+
+	@Test
+	public void test3(){
+		ApplicationContext context = new ClassPathXmlApplicationContext("replaceMethodTest.xml");
+		TestChangeMethod test = context.getBean("testChangeMethod", TestChangeMethod.class);
+		test.changeMe();
 	}
 }

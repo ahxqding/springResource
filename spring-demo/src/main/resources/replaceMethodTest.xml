@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="testChangeMethod" class="com.mashibing.replacedMethod.TestChangeMethod">
+		<constructor-arg name="name" value="zhangsan"/>
+		<constructor-arg name="map">
+			<map>
+				<entry key="age" value="23"/>
+				<entry key="sex" value="男"/>
+				<entry key="address" value="北京"/>
+				<entry key="hobby" value="basketball"/>
+			</map>
+		</constructor-arg>
+
+		<!--在运行时用新的方法替换现有的方法，与lookup不同的是，该方法不但可以动态地替换返回实体bean，而且还能动态地更改原有方法的逻辑-->
+		<replaced-method name="changeMe" replacer="replacer"/>
+	</bean>
+	<bean id="replacer" class="com.mashibing.replacedMethod.TestMethodReplacer"></bean>
+</beans>
