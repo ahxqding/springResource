@@ -1,3 +1,4 @@
+import com.mashibing.circle.A;
 import com.mashibing.lookupMethod.GetBeanTest;
 import com.mashibing.replacedMethod.TestChangeMethod;
 import org.junit.Test;
@@ -15,6 +16,7 @@ public class MyTest1 {
 	@Test
 	public void test1(){
 		BeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource("tx.xml"));
+		A a = (A)beanFactory.getBean("a");
 	}
 
 	@Test
