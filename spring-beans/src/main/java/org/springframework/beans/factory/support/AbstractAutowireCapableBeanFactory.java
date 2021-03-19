@@ -597,13 +597,27 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
+			/*
+			  上面讲过调用此方法放进一个ObjectFactory，二级缓存会对应删除的
+			getEarlyBeanReference的作用：调用SmartInstantiationAwareBeanPostProcessor.getEarlyBeanReference()这个方法 否则啥都不做;
+			也就是给调用者个机会，自己去实现暴露这个bean的应用的逻辑;
+			比如在getEarlyBeanReference()里可以实现AOP的逻辑,参考自动代理创建器AbstractAutoProxyCreator 实现了这个方法来创建代理对象;
+			若不需要执行AOP的逻辑，直接返回Bean;
+			 */
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
+			// 填充属性，解决@Autowired依赖~
 			populateBean(beanName, mbd, instanceWrapper);
+			// 执行初始化回调方法们
+			/*
+			  initializeBean方法会执行BeanPostProcessor接口的两个方法，在这过程中可能会将原始的bean对象给手动代理替换掉
+			  （注意不是Spring容器管理的自动代理，正常的AOP都是受Spring容器管理的，如果手动使用ProxyFactory为bean创建代理，
+			  那么原始的bean就会被手动创建的代理对象给替换掉，且该手动创建的代理对象不受Spring容器自动管理）
+			 */
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -616,12 +630,31 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}
 		}
 
+		// earlySingletonExposure：如果你的bean允许被早期暴露出去 也就是说可以被循环引用  那这里就会进行检查
 		if (earlySingletonExposure) {
+			//注意：第二参数为false  表示不会再去三级缓存里查了
+			/*
+			此处非常巧妙的一点，因为上面各式各样的实例化、初始化的后置处理器都执行了， 那么此处得到的earlySingletonReference的引用只有两种结果，
+			一种是null，代表着这个bean不存在被其它bean引用的循环依赖情况，直接返回原始对象即可，一种是该bean的二级缓存，代表着该bean被其它bean引用的循环依赖情况。
+            对象的循环依赖和代理对象的循环依赖都是靠三级缓存生成最终对象引用，放入二级缓存（三级缓存主要是解决代理对象的循环依赖）。
+            因为前面通过addSingletonFactory方法暴露了三级缓存的ObjectFactory。
+			 */
 			Object earlySingletonReference = getSingleton(beanName, false);
+			/*
+			这个判断主要是针对代理对象的循环引用场景。
+			这个意思是如果经过了initializeBean()后，exposedObject还是没有变，则需要返回拿到的二级缓存earlySingletonReference。
+			因为前面说过，存在循环依赖的场景时，不管普通对象还是代理对象的循环依赖，都是靠三级缓存生成对象并放入二级缓存的，
+			如果exposedObject没有变，返回的就是exposedObject的代理对象的引用。
+			 */
 			if (earlySingletonReference != null) {
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
+				/*
+				如果exposedObject变了，则会去检查这个bean的依赖是否已经创建好，如果没有则会抛异常。
+				allowRawInjectionDespiteWrapping这个值默认是false
+				hasDependentBean：若它有依赖的bean 那就需要继续校验了(若没有依赖的 就放过它~)
+				 */
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
 					String[] dependentBeans = getDependentBeans(beanName);
 					Set<String> actualDependentBeans = new LinkedHashSet<>(dependentBeans.length);
