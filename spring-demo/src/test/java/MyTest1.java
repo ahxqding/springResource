@@ -2,6 +2,8 @@ import com.mashibing.circle.A;
 import com.mashibing.lookupMethod.GetBeanTest;
 import com.mashibing.replacedMethod.TestChangeMethod;
 import org.junit.Test;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanCurrentlyInCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -31,5 +33,18 @@ public class MyTest1 {
 		ApplicationContext context = new ClassPathXmlApplicationContext("replaceMethodTest.xml");
 		TestChangeMethod test = context.getBean("testChangeMethod", TestChangeMethod.class);
 		test.changeMe();
+	}
+
+	@Test
+	public void testCircleByConstructor() throws Throwable{
+		try {
+			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("circularDependencies.xml");
+			System.out.println(context.getBean("testA"));
+			System.out.println(context.getBean("testB"));
+			System.out.println(context.getBean("testC"));
+		} catch (Exception e) {
+			Throwable cause = e.getCause().getCause().getCause();
+			throw cause;
+		}
 	}
 }
