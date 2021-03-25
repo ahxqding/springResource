@@ -552,6 +552,25 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #instantiateUsingFactoryMethod
 	 * @see #autowireConstructor
 	 */
+	/*
+	   1.如果是单例则需要首先清除缓存
+	   2.实例化bean，将beanDefinition转换为beanWrapper
+	        转换是一个复杂的过程，但是我们可以尝试概括大致的功能，如下所示：
+	          *如果存在工厂方法则使用工厂方法进行初始化
+	          * 一个类有多个构造函数，每个构造函数都有不同的参数，所以需要根据参数锁定构造函数并进行初始化
+	          * 如果即不存在工厂方法也不存在带有参数的构造函数，则使用默认的构造函数进行bean的实例化
+	   3.mergedBeanDefinition的应用
+	       bean的合并后的处理，autowired注解正是通过此方法实现诸如类型的预解析
+	   4.依赖处理
+	        在spring中会有循环依赖的情况，当创建B的时候，涉及到A的步骤时，并不是直接去再次创建A，而是通过放入缓存中的objectFactory来创建实例，这样就解决了循环依赖的问题
+	   5.属性填充，将所有属性填充至bean的实例中
+	   6.循环依赖检查
+	        在spring中解决循环依赖只对单例有效，而对于prototype的bean，spring没有好的解决办法，唯一要做的就是抛出异常，在这个步骤里面会检测已经加载的bean是否已经出现了循环依赖，
+	        并判断是否需要抛出异常
+	   7.注册disposableBean
+	        如果配置了destroy-method，这里需要注册以便于在销毁时候调用
+	   8.完成创建并返回
+	 */
 	protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
 			throws BeanCreationException {
 
@@ -562,6 +581,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 		if (instanceWrapper == null) {
 			// 创建bean对象，并且将对象包裹在beanWrapper中
+			// 根据指定的bean使用对应的策略创建新的实例，如：工厂方法、构造函数自动注入、简单初始化
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
 		// 注意：此处是原始对象，这点非常的重要
@@ -610,7 +630,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Initialize the bean instance.
 		Object exposedObject = bean;
 		try {
-			// 填充属性，解决@Autowired依赖~
+			// 填充属性，将各个属性注入，其中，可能存在依赖于其他bean的属性，则会递归初始化。解决@Autowired依赖~
 			populateBean(beanName, mbd, instanceWrapper);
 			// 执行初始化回调方法们
 			/*
@@ -678,6 +698,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		// Register bean as disposable.
 		try {
+			// 根据scope注册bean
 			registerDisposableBeanIfNecessary(beanName, bean, mbd);
 		}
 		catch (BeanDefinitionValidationException ex) {
@@ -1192,6 +1213,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
 		// Make sure bean class is actually resolved at this point.
+		// 解析class
 		Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
 		if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
@@ -1204,6 +1226,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			return obtainFromSupplier(instanceSupplier, beanName);
 		}
 
+		// 如果工厂方法不为空则使用工厂方法初始化策略
 		if (mbd.getFactoryMethodName() != null) {
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
@@ -1214,24 +1237,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		if (args == null) {
 			synchronized (mbd.constructorArgumentLock) {
 				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+					// 一个类有多个构造函数，每个构造函数都有不同的参数，所以调用前需要先根据参数锁定构造函数或对应的工厂方法
 					resolved = true;
 					autowireNecessary = mbd.constructorArgumentsResolved;
 				}
 			}
 		}
+		// 如果已经解析过，则使用解析好的构造函数方法不需要再次锁定
 		if (resolved) {
 			if (autowireNecessary) {
+				// 构造函数自动注入
 				return autowireConstructor(beanName, mbd, null, null);
 			}
 			else {
+				// 使用默认构造函数构造
 				return instantiateBean(beanName, mbd);
 			}
 		}
 
 		// Candidate constructors for autowiring?
+		// 需要根据参数解析构造函数
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			// 构造函数自动注入
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
@@ -1242,6 +1271,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// No special handling: simply use no-arg constructor.
+		// 使用默认构造函数构造
 		return instantiateBean(beanName, mbd);
 	}
 
