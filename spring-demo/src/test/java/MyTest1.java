@@ -7,6 +7,7 @@ import org.springframework.beans.factory.BeanCurrentlyInCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 
@@ -46,5 +47,10 @@ public class MyTest1 {
 			Throwable cause = e.getCause().getCause().getCause();
 			throw cause;
 		}
+	}
+
+	@Test
+	public void test4(){
+		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
 	}
 }
