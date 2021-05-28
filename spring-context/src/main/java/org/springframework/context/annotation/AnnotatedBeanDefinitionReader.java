@@ -65,6 +65,12 @@ public class AnnotatedBeanDefinitionReader {
 	 * in the form of a {@code BeanDefinitionRegistry}
 	 * @see #AnnotatedBeanDefinitionReader(BeanDefinitionRegistry, Environment)
 	 * @see #setEnvironment(Environment)
+	 * 读取加了注解的类，使其能够变成beanDefinition
+	 * AnnotatedBeanDefinitionReader功能：
+	 *    1、BeanDefinitionRegistry：注册一个bd
+	 *    2、BeanNameGenerator: 为加了注解的类，生成beanName,能够准确的生成beanName、自定义名字生成策略
+	 *    3、ScopeMetadataResolver:
+	 *    4、ConditionEvaluator:
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry) {
 		this(registry, getOrCreateEnvironment(registry));
@@ -218,9 +224,14 @@ public class AnnotatedBeanDefinitionReader {
 			return;
 		}
 
+		// 给beanDefinition设置一个supplier，如果配置了，可以代替静态工厂方法
 		abd.setInstanceSupplier(instanceSupplier);
+		// 分析作用域的
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
+		// 如过注解上没有配置beanName，则使用内置的生成器生成一个beanName
+		// 默认情况下，这里的生成器是AnnotationBeanNameGenerator对象，但是用户可以自己自定义一个名字解析器
+		// 通过applicationContext.setBeanNameGenerator()去自定义
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
 
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);

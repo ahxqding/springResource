@@ -121,8 +121,11 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * @see ClassPathBeanDefinitionScanner#setBeanNameGenerator
 	 */
 	public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
+		// 给reader一个自定义的beanName生成器
 		this.reader.setBeanNameGenerator(beanNameGenerator);
+		// 给扫描器一个自定义的beanName生成器,给外部扩展，例如mybatis有自己的扫描策略
 		this.scanner.setBeanNameGenerator(beanNameGenerator);
+		// 注册一个beanName生成器到单例池，方便spring内部自己扫描出来的bean使用
 		getBeanFactory().registerSingleton(
 				AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR, beanNameGenerator);
 	}

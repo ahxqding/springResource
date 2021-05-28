@@ -2,8 +2,6 @@ import com.mashibing.circle.A;
 import com.mashibing.lookupMethod.GetBeanTest;
 import com.mashibing.replacedMethod.TestChangeMethod;
 import org.junit.Test;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanCurrentlyInCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.context.ApplicationContext;
